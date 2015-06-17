@@ -13,8 +13,7 @@ namespace PubSubDataConstructor.Tests.Publishers
             var candidate = new DataCandidate();
             var channel = new FakeChannel();
             channel.OnPublish += (e, args) => Assert.Fail("Publisher called Push when suspended");
-            var publisher = new Publisher();
-            publisher.Connect(channel);
+            var publisher = new Publisher(channel);
 
             publisher.Suspend();            
             publisher.Publish(candidate);         
@@ -27,8 +26,7 @@ namespace PubSubDataConstructor.Tests.Publishers
             var channel = new FakeChannel();
             var pushCalled = false;
             channel.OnPublish += (e, args) => pushCalled = true;
-            var publisher = new Publisher();
-            publisher.Connect(channel);
+            var publisher = new Publisher(channel);
             
             publisher.Publish(candidate);
 
@@ -42,8 +40,7 @@ namespace PubSubDataConstructor.Tests.Publishers
             var channel = new FakeChannel();
             var pushCalled = false;
             channel.OnPublish += (e, args) => pushCalled = true;
-            var publisher = new Publisher();
-            publisher.Connect(channel);
+            var publisher = new Publisher(channel);
 
             publisher.Suspend();
             publisher.Publish(candidate);

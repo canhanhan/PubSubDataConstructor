@@ -7,7 +7,6 @@ namespace PubSubDataConstructor
     {
         event EventHandler OnConnect;
         event EventHandler OnDisconnect;
-        event EventHandler<DataCandidateEventArgs> OnDataAvailable;
 
         bool IsConnected { get; }
 
@@ -15,8 +14,8 @@ namespace PubSubDataConstructor
         void Disconnect();
 
         IEnumerable<DataCandidate> Poll(string topic);
-        void Subscribe(string topic);
-        void Unsubscribe(string topic);
+        void Subscribe(string topic, Action<DataCandidate> callback);
+        void Unsubscribe(string topic, Action<DataCandidate> callback);
         void Publish(DataCandidate dataCandidate);
     }
 }

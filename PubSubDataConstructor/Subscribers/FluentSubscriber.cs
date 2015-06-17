@@ -1,11 +1,8 @@
-﻿using PubSubDataConstructor.Reducers;
-using PubSubDataConstructor.Filters;
+﻿using PubSubDataConstructor.Filters;
+using PubSubDataConstructor.Reducers;
 using PubSubDataConstructor.Strategies;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace PubSubDataConstructor.Subscribers
 {
@@ -96,14 +93,12 @@ namespace PubSubDataConstructor.Subscribers
 
                 return this;
             }
-
         }
 
-        public FluentSubscriber()
-        {
-            base.Topic = typeof(TTarget).Name + ".*";
-        }
+        protected IStrategy Strategy { get; set; }
 
+        public FluentSubscriber(IChannel channel) : base(channel) {}
+        
         public void Filter(IFilter filter)
         {
             if (filter == null)
@@ -119,7 +114,14 @@ namespace PubSubDataConstructor.Subscribers
 
         public void SetStrategy(IStrategy strategy)
         {
-            base.Strategy = strategy;
+            var topic = typeof(TTarget).Name + ".*";
+            
+            if (Strategy != null)
+                Unsubscribe(topic);
+
+            Strategy = strategy;
+
+            Subscribe(topic, Strategy);
         }
 
         public void LoadAndBuild(LoadAndBuildStrategy.LoadDelegate loadCallback)
@@ -132,6 +134,6 @@ namespace PubSubDataConstructor.Subscribers
             var builder = new MapBuilder<TProperty>(this, expression);
 
             return builder;
-        }
+        }        
     }
 }

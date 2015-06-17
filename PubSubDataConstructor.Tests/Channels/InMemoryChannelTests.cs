@@ -48,14 +48,11 @@ namespace PubSubDataConstructor.Tests.Channels
             var isTriggered = false;
             var candidate = new DataCandidate { TargetId = topic };
             DataCandidate returnedCandidate = null;
-            var publisher = new InMemoryChannel();
-            var subscriber = new InMemoryChannel();
-            publisher.Connect();
-            subscriber.OnDataAvailable += (o, args) => { isTriggered = true; returnedCandidate = candidate; };
-            subscriber.Connect();
+            var channel = new InMemoryChannel();
+            channel.Connect();
 
-            subscriber.Subscribe(topic);
-            publisher.Publish(candidate);           
+            channel.Subscribe(topic, x => { isTriggered = true; returnedCandidate = x; });
+            channel.Publish(candidate);           
 
             Assert.IsTrue(isTriggered);
             Assert.AreSame(candidate, returnedCandidate);
@@ -71,10 +68,9 @@ namespace PubSubDataConstructor.Tests.Channels
             var publisher = new InMemoryChannel();
             var subscriber = new InMemoryChannel();
             publisher.Connect();
-            subscriber.OnDataAvailable += (o, args) => { isTriggered = true; returnedCandidate = candidate; };
             subscriber.Connect();
 
-            subscriber.Subscribe("DifferentTopic");
+            subscriber.Subscribe("DifferentTopic", x => { isTriggered = true; returnedCandidate = x; });
             publisher.Publish(candidate);
 
             Assert.IsFalse(isTriggered);

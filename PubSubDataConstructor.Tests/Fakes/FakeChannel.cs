@@ -7,7 +7,6 @@ namespace PubSubDataConstructor.Tests.Fakes
     {
         public event EventHandler OnConnect;
         public event EventHandler OnDisconnect;
-        public event EventHandler<DataCandidateEventArgs> OnDataAvailable;
 
         public event EventHandler<DataCandidateEventArgs> OnPublish;
         public event EventHandler OnPoll;
@@ -32,13 +31,13 @@ namespace PubSubDataConstructor.Tests.Fakes
                 this.OnDisconnect.Invoke(this, null);
         }
 
-        public void Subscribe(string topic)
+        public void Subscribe(string topic, Action<DataCandidate> callback)
         {
             if (OnSubscribe != null)
                 OnSubscribe.Invoke(this, null);
         }
 
-        public void Unsubscribe(string topic)
+        public void Unsubscribe(string topic, Action<DataCandidate> callback)
         {
             if (OnUnsubscribe != null)
                 OnUnsubscribe.Invoke(this, null);
@@ -55,12 +54,6 @@ namespace PubSubDataConstructor.Tests.Fakes
         {
             if (OnPublish != null)
                 OnPublish.Invoke(this, new DataCandidateEventArgs(dataCandidate));
-        }
-
-        public void TriggerDataAvailable(DataCandidate dataCandidate)
-        {
-            if (OnDataAvailable != null)
-                OnDataAvailable.Invoke(this, new DataCandidateEventArgs(dataCandidate));
         }
     }
 }

@@ -10,65 +10,46 @@ namespace PubSubDataConstructor.Subscribers
         public event EventHandler<DataCandidateEventArgs> OnReceived;
         public event EventHandler<DataEventArgs> OnConstructed;
 
-        private string topic;
-        private IStrategy strategy;
+        private readonly KeyValueStore<Action<DataCandidate>> subscriptions;
 
-        public string Topic
+        public Subscriber(IChannel channel) : base(channel) 
         {
-            get { return topic; }
-            set
-            {
-                if (value == null)
-                    throw new ArgumentNullException("value");
-
-                if (topic != null && channel == null)
-                    channel.Unsubscribe(topic);
-
-                topic = value;
-
-                if (channel != null)
-                    channel.Subscribe(topic);
-            }
-        }
-       
-        public IStrategy Strategy
-        {
-            get { return strategy; }
-            set
-            {
-                if (value == null)
-                    throw new ArgumentNullException("value");
-
-                strategy = value;
-            }
+            this.subscriptions = new KeyValueStore<Action<DataCandidate>>();
         }
 
-        public override void Connect(IChannel channel)
+        public virtual void Subscribe(string topic, IStrategy strategy)
         {
-            if (Strategy == null)
-                throw new InvalidProgramException("Strategy must be set before calling connect.");
+            if (topic == null)
+                throw new ArgumentNullException("topic");
 
-            if (Topic == null)
-                throw new InvalidProgramException("Topic must be set before calling connect.");
+            if (strategy == null)
+                throw new ArgumentNullException("strategy");
 
-            channel.OnDataAvailable += channel_OnDataAvailable;
-            channel.Subscribe(Topic);
-            base.Connect(channel);
+            this.CheckConnection();
+
+            Action<DataCandidate> callback = x => channel_OnDataAvailable(x, topic, strategy);       
+            subscriptions.Add(topic, callback);
+            channel.Subscribe(topic, callback);
         }
 
-        public override void Disconnect()
+        public virtual void Unsubscribe(string topic)
         {
-            channel.OnDataAvailable -= channel_OnDataAvailable;
-            channel.Unsubscribe(Topic);
-            base.Disconnect();
+            if (topic == null)
+                throw new ArgumentNullException("topic");
+
+            this.CheckConnection();
+
+            var callbacks = subscriptions[topic];
+            foreach (var callback in callbacks)
+                channel.Unsubscribe(topic, callback);
         }
-       
-        private void channel_OnDataAvailable(object sender, DataCandidateEventArgs e)
+      
+        private void channel_OnDataAvailable(DataCandidate candidate, string topic, IStrategy strategy)
         {
             if (OnReceived != null)
-                OnReceived.Invoke(this, e);
+                OnReceived.Invoke(this, new DataCandidateEventArgs(candidate));
 
-            var result = Strategy.Run(channel, filters.ToArray(), e.Candidate);
+            var result = strategy.Run(channel, filters.ToArray(), candidate);
 
             if (result != null && OnConstructed != null)
                 OnConstructed.Invoke(this, new DataEventArgs(result));

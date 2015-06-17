@@ -13,7 +13,7 @@ namespace PubSubDataConstructor.Publishers
 
         private readonly ConcurrentQueue<DataCandidate> queue;
 
-        public Publisher()
+        public Publisher(IChannel channel) : base(channel)
         {
             this.queue = new ConcurrentQueue<DataCandidate>();
         }
@@ -82,6 +82,9 @@ namespace PubSubDataConstructor.Publishers
         {
             if (candidate == null)
                 throw new ArgumentNullException("candidate");
+
+            if (!channel.IsConnected)
+                channel.Connect();
 
             channel.Publish(candidate);
             if (OnPublished != null)

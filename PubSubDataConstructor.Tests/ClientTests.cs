@@ -10,12 +10,28 @@ namespace PubSubDataConstructor.Tests
     [TestClass]
     public class ClientTests
     {
-        class FakeClient : Client {}
+        class FakeClient : Client 
+        {
+            public bool OnChannelConnectTriggered { get; set; }
+            public bool OnChannelDisconnectTriggered { get; set; }
+
+            public FakeClient(IChannel channel) : base(channel) {}
+
+            protected override void OnChannelConnect()
+            {
+                OnChannelConnectTriggered = true;
+            }
+
+            protected override void OnChannelDisconnect()
+            {
+                OnChannelDisconnectTriggered = true;
+            }
+        }
 
         [TestMethod]
         public void Client_AddFilter()
         {
-            var subscriber = new FakeClient();
+            var subscriber = new FakeClient(new FakeChannel());
 
             var filter = new FakeFilter();
             subscriber.AddFilter(filter);
@@ -26,7 +42,7 @@ namespace PubSubDataConstructor.Tests
         [TestMethod]
         public void Client_AddFilter_MultipleFilters()
         {
-            var subscriber = new FakeClient();
+            var subscriber = new FakeClient(new FakeChannel());
             var filter1 = new FakeFilter();
             var filter2 = new FakeFilter();
 
@@ -40,7 +56,7 @@ namespace PubSubDataConstructor.Tests
         [TestMethod]
         public void Client_RemoveFilter_SingleFilter()
         {
-            var subscriber = new FakeClient();
+            var subscriber = new FakeClient(new FakeChannel());
             var filter = new FakeFilter();
 
             subscriber.AddFilter(filter);
@@ -52,7 +68,7 @@ namespace PubSubDataConstructor.Tests
         [TestMethod]
         public void Client_RemoveFilter_MultipleFilters()
         {
-            var subscriber = new FakeClient();
+            var subscriber = new FakeClient(new FakeChannel());
             var filter1 = new FakeFilter();
             var filter2 = new FakeFilter();
 
@@ -66,28 +82,22 @@ namespace PubSubDataConstructor.Tests
         [TestMethod]
         public void Client_Connect_TriggersEvent()
         {
-            var isTriggered = false;
             var channel = new FakeChannel();
-            var client = new FakeClient();
-            client.OnConnect += (e, args) => isTriggered = true;
+            var client = new FakeClient(channel);
+            channel.Connect();
 
-            client.Connect(channel);
-
-            Assert.IsTrue(isTriggered);
+            Assert.IsTrue(client.OnChannelConnectTriggered);
         }
 
         [TestMethod]
         public void Client_Disconnect_TriggersEvent()
         {
-            var isTriggered = false;
             var channel = new FakeChannel();
-            var client = new FakeClient();
-            client.OnConnect += (e, args) => isTriggered = true;
+            var client = new FakeClient(channel);
 
-            client.Connect(channel);
-            client.Disconnect();
+            channel.Disconnect();
 
-            Assert.IsTrue(isTriggered);
+            Assert.IsTrue(client.OnChannelDisconnectTriggered);
         }
     }
 }

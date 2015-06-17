@@ -109,7 +109,7 @@ namespace PubSubDataConstructor.Tests
 
             private readonly List<Func<TData, DataCandidate>> mappings;
 
-            public FluentPublisher()
+            public FluentPublisher(IChannel channel) : base(channel)
             {
                 mappings = new List<Func<TData, DataCandidate>>();
             }
@@ -157,7 +157,7 @@ namespace PubSubDataConstructor.Tests
 
         class Source1TargetPublisher : FluentPublisher<Source1Entity, TargetEntity>
         {
-            public Source1TargetPublisher()
+            public Source1TargetPublisher(IChannel channel) : base(channel) 
             {
                 Id(s => s.Id);
                 Map(s => s.Field1, t => t.Field1);
@@ -171,7 +171,7 @@ namespace PubSubDataConstructor.Tests
 
         class Source2TargetPublisher : FluentPublisher<Source2Entity, TargetEntity>
         {
-            public Source2TargetPublisher()
+            public Source2TargetPublisher(IChannel channel) : base(channel)
             {
                 Id(s => s.Id);
                 Map(s => s.Field2, t => t.Field2);
@@ -183,7 +183,7 @@ namespace PubSubDataConstructor.Tests
 
         class TargetSubscriber : FluentSubscriber<TargetEntity>
         {
-            public TargetSubscriber()
+            public TargetSubscriber(IChannel channel) : base(channel)
             {
                 LoadAndBuild(x => new TargetEntity());
                 Map(t => t.Field1).NotBlank();
@@ -198,14 +198,11 @@ namespace PubSubDataConstructor.Tests
         [TestMethod]
         public void Test()
         {
-            var subscriberChannel = new InMemoryChannel();
-            var publisher1Channel = new InMemoryChannel();
-            var publisher2Channel = new InMemoryChannel();
+            var channel = new InMemoryChannel();
 
             TargetEntity target = null;
-            var targetSubscriber = new TargetSubscriber();
+            var targetSubscriber = new TargetSubscriber(channel);
             targetSubscriber.OnConstructed += (s, args) => target = (TargetEntity)args.Data;
-            targetSubscriber.Connect(subscriberChannel);
 
             var source1 = new Source1Entity {
                 Field1 = "Source1Field1",
@@ -221,17 +218,11 @@ namespace PubSubDataConstructor.Tests
                 Field5 = new [] { "Source2Field5Value1", "Source2Field5Value2" }
             };
 
-            var source1Publisher = new Source1TargetPublisher();
-            source1Publisher.Connect(publisher1Channel);
+            var source1Publisher = new Source1TargetPublisher(channel);
             source1Publisher.Publish(source1);
-            source1Publisher.Disconnect();
 
-            var source2Publisher = new Source2TargetPublisher();
-            source2Publisher.Connect(publisher2Channel);
+            var source2Publisher = new Source2TargetPublisher(channel);
             source2Publisher.Publish(source2);
-            source2Publisher.Disconnect();
-
-            targetSubscriber.Disconnect();
 
             Assert.AreEqual("Source1Field1", target.Field1);
             Assert.AreEqual("Source2Field2", target.Field2);

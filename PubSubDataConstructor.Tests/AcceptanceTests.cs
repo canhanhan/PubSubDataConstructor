@@ -46,16 +46,11 @@ namespace PubSubDataConstructor.Tests
                 Field4 = "Field4_ExistingValue"
             };
 
-            var publisherChannel = new InMemoryChannel();
-            var subscriberChannel = new InMemoryChannel();
+            var channel = new InMemoryChannel();
 
-            var publisher = new Publisher();
-            publisher.Connect(publisherChannel);
-
-            var subscriber = new Subscriber();
-            subscriber.Topic = topic;
-            subscriber.Strategy = new LoadAndBuildStrategy(x => entity);
-            subscriber.Connect(subscriberChannel);
+            var publisher = new Publisher(channel);
+            var subscriber = new Subscriber(channel);
+            subscriber.Subscribe(topic, new LoadAndBuildStrategy(x => entity));
             subscriber.AddFilter(new BlankFilter("Field3"));
 
             var candidate_low_priority = new DataCandidate
@@ -145,20 +140,15 @@ namespace PubSubDataConstructor.Tests
             var topic = "TestTopic";
             var entity = new TestEntity();
 
-            var publisherChannel = new InMemoryChannel();
-            var subscriberChannel = new InMemoryChannel();
-
-            var publisher = new Publisher();
-            publisher.Connect(publisherChannel);
+            var channel = new InMemoryChannel();
+            var publisher = new Publisher(channel);
+            var subscriber = new Subscriber(channel);
 
             var strategy = new LoadAndBuildStrategy(x => entity);
             strategy.Add("Field5", new MinReducer());
             strategy.Add("Field6", new MaxReducer());
-
-            var subscriber = new Subscriber();
-            subscriber.Topic = topic;
-            subscriber.Strategy = strategy;
-            subscriber.Connect(subscriberChannel);
+            
+            subscriber.Subscribe(topic, strategy);
 
             var candidate_field5_c1 = new DataCandidate
             {
@@ -214,19 +204,14 @@ namespace PubSubDataConstructor.Tests
             var topic = "TestTopic";
             var entity = new TestEntity();
 
-            var publisherChannel = new InMemoryChannel();
-            var subscriberChannel = new InMemoryChannel();
-
-            var publisher = new Publisher();
-            publisher.Connect(publisherChannel);
+            var channel = new InMemoryChannel();
+            var publisher = new Publisher(channel);
+            var subscriber = new Subscriber(channel);
 
             var strategy = new LoadAndBuildStrategy(x => entity);
             strategy.Add("Field7", new UnionReducer());
 
-            var subscriber = new Subscriber();
-            subscriber.Topic = topic;
-            subscriber.Strategy = strategy;
-            subscriber.Connect(subscriberChannel);
+            subscriber.Subscribe(topic, strategy); 
 
             var candidate_field7_c1 = new DataCandidate
             {
@@ -264,19 +249,14 @@ namespace PubSubDataConstructor.Tests
             var topic = "TestTopic";
             var entity = new TestEntity();
 
-            var publisherChannel = new InMemoryChannel();
-            var subscriberChannel = new InMemoryChannel();
-
-            var publisher = new Publisher();
-            publisher.Connect(publisherChannel);
+            var channel = new InMemoryChannel();
+            var publisher = new Publisher(channel);
+            var subscriber = new Subscriber(channel);
 
             var strategy = new LoadAndBuildStrategy(x => entity);
             strategy.Add("Field7", new JoinReducer());
 
-            var subscriber = new Subscriber();
-            subscriber.Topic = topic;
-            subscriber.Strategy = strategy;
-            subscriber.Connect(subscriberChannel);
+            subscriber.Subscribe(topic, strategy); 
 
             var candidate_field7_c1 = new DataCandidate
             {
@@ -314,20 +294,15 @@ namespace PubSubDataConstructor.Tests
             var topic = "TestTopic";
             var entity = new TestEntity();
 
-            var publisherChannel = new InMemoryChannel();
-            var subscriberChannel = new InMemoryChannel();
-
-            var publisher = new Publisher();
-            publisher.Connect(publisherChannel);
+            var channel = new InMemoryChannel();
+            var publisher = new Publisher(channel);
+            var subscriber = new Subscriber(channel);
 
             var strategy = new LoadAndBuildStrategy(x => entity);
             strategy.Add("Field8", new MinReducer());
             strategy.Add("Field9", new MaxReducer());
 
-            var subscriber = new Subscriber();
-            subscriber.Topic = topic;
-            subscriber.Strategy = strategy;
-            subscriber.Connect(subscriberChannel);
+            subscriber.Subscribe(topic, strategy); 
 
             var candidate_field8_c1 = new DataCandidate
             {
