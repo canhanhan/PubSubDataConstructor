@@ -4,7 +4,6 @@ using PubSubDataConstructor.Channels;
 using PubSubDataConstructor.Publishers;
 using PubSubDataConstructor.Subscribers;
 using PubSubDataConstructor.Filters;
-using PubSubDataConstructor.Strategies;
 using PubSubDataConstructor.Reducers;
 
 namespace PubSubDataConstructor.Tests
@@ -49,9 +48,9 @@ namespace PubSubDataConstructor.Tests
             var channel = new InMemoryChannel();
 
             var publisher = new Publisher(channel);
-            var subscriber = new Subscriber(channel);
-            subscriber.Subscribe(topic, new LoadAndBuildStrategy(x => entity));
-            subscriber.AddFilter(new BlankFilter("Field3"));
+            var subscriber = new FluentSubscriber<TestEntity>(channel);
+            subscriber.Factory = x => entity;
+            subscriber.Map(x => x.Field3).NotBlank();
 
             var candidate_low_priority = new DataCandidate
             {
@@ -142,14 +141,11 @@ namespace PubSubDataConstructor.Tests
 
             var channel = new InMemoryChannel();
             var publisher = new Publisher(channel);
-            var subscriber = new Subscriber(channel);
-
-            var strategy = new LoadAndBuildStrategy(x => entity);
-            strategy.Add("Field5", new MinReducer());
-            strategy.Add("Field6", new MaxReducer());
-            
-            subscriber.Subscribe(topic, strategy);
-
+            var subscriber = new FluentSubscriber<TestEntity>(channel);
+            subscriber.Factory = x => entity;
+            subscriber.Map(x => x.Field5).Min();
+            subscriber.Map(x => x.Field6).Max();
+           
             var candidate_field5_c1 = new DataCandidate
             {
                 SourceId = "Test Source",
@@ -206,12 +202,9 @@ namespace PubSubDataConstructor.Tests
 
             var channel = new InMemoryChannel();
             var publisher = new Publisher(channel);
-            var subscriber = new Subscriber(channel);
-
-            var strategy = new LoadAndBuildStrategy(x => entity);
-            strategy.Add("Field7", new UnionReducer());
-
-            subscriber.Subscribe(topic, strategy); 
+            var subscriber = new FluentSubscriber<TestEntity>(channel);
+            subscriber.Factory = x => entity;
+            subscriber.Map(x => x.Field7).Union();
 
             var candidate_field7_c1 = new DataCandidate
             {
@@ -251,12 +244,9 @@ namespace PubSubDataConstructor.Tests
 
             var channel = new InMemoryChannel();
             var publisher = new Publisher(channel);
-            var subscriber = new Subscriber(channel);
-
-            var strategy = new LoadAndBuildStrategy(x => entity);
-            strategy.Add("Field7", new JoinReducer());
-
-            subscriber.Subscribe(topic, strategy); 
+            var subscriber = new FluentSubscriber<TestEntity>(channel);
+            subscriber.Factory = x => entity;
+            subscriber.Map(x => x.Field7).Join();
 
             var candidate_field7_c1 = new DataCandidate
             {
@@ -296,13 +286,10 @@ namespace PubSubDataConstructor.Tests
 
             var channel = new InMemoryChannel();
             var publisher = new Publisher(channel);
-            var subscriber = new Subscriber(channel);
-
-            var strategy = new LoadAndBuildStrategy(x => entity);
-            strategy.Add("Field8", new MinReducer());
-            strategy.Add("Field9", new MaxReducer());
-
-            subscriber.Subscribe(topic, strategy); 
+            var subscriber = new FluentSubscriber<TestEntity>(channel);
+            subscriber.Factory = x => entity;
+            subscriber.Map(x => x.Field8).Min();
+            subscriber.Map(x => x.Field9).Max();
 
             var candidate_field8_c1 = new DataCandidate
             {

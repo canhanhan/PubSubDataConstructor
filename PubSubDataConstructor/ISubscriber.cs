@@ -3,9 +3,15 @@ using System.Collections.Generic;
 
 namespace PubSubDataConstructor
 {
-    public interface ISubscriber : IChannelClient
+    public interface ISubscriber
     {
-        event EventHandler<DataCandidateEventArgs> OnReceived;
-        event EventHandler<DataEventArgs> OnConstructed;
+        IEnumerable<IFilter> Filters { get; }
+
+        void AddFilter(IFilter filter);
+        void RemoveFilter(IFilter filter);
+
+        IEnumerable<DataCandidate> Poll(string topic);
+        void Subscribe(string topic, Action<DataCandidate> callback);
+        void Unsubscribe(string topic);
     }
 }

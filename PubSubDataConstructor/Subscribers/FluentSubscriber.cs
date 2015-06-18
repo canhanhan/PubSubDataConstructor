@@ -1,12 +1,13 @@
 ﻿using PubSubDataConstructor.Filters;
 using PubSubDataConstructor.Reducers;
-using PubSubDataConstructor.Strategies;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace PubSubDataConstructor.Subscribers
 {
-    class FluentSubscriber<TTarget> : Subscriber
+    public class FluentSubscriber<TTarget>
     {
         public class MapBuilder<TProperty>
         {
@@ -57,7 +58,7 @@ namespace PubSubDataConstructor.Subscribers
                 if (reducer == null)
                     throw new ArgumentNullException("reducer");
 
-                subscriber.Strategy.Add(fieldName, reducer);
+                subscriber.valueReducers.Add(fieldName, reducer);
 
                 return this;
             }
@@ -95,16 +96,27 @@ namespace PubSubDataConstructor.Subscribers
             }
         }
 
-        protected IStrategy Strategy { get; set; }
+        public event EventHandler<DataEventArgs> OnConstructed;
 
-        public FluentSubscriber(IChannel channel) : base(channel) {}
+        private readonly ISubscriber subscriber;
+        private readonly KeyValueStore<IReducer> valueReducers;
+        private bool resetFields;
+
+        public Func<DataCandidate, TTarget> Factory { get; set; }
+
+        public FluentSubscriber(IChannel channel)
+        {
+            this.Factory = x => Activator.CreateInstance<TTarget>();
+            this.subscriber = new Subscriber(channel);
+            this.valueReducers = new KeyValueStore<IReducer>();
+        }
         
         public void Filter(IFilter filter)
         {
             if (filter == null)
                 throw new ArgumentNullException("filter");
 
-            AddFilter(filter);
+            subscriber.AddFilter(filter);
         }
 
         public void Filter(Func<DataCandidate, bool> filter)
@@ -112,28 +124,62 @@ namespace PubSubDataConstructor.Subscribers
             Filter(new CustomFilter(filter));
         }
 
-        public void SetStrategy(IStrategy strategy)
-        {
-            var topic = typeof(TTarget).Name + ".*";
-            
-            if (Strategy != null)
-                Unsubscribe(topic);
-
-            Strategy = strategy;
-
-            Subscribe(topic, Strategy);
-        }
-
-        public void LoadAndBuild(LoadAndBuildStrategy.LoadDelegate loadCallback)
-        {
-            this.SetStrategy(new LoadAndBuildStrategy(loadCallback));
-        }
-
         public MapBuilder<TProperty> Map<TProperty>(Expression<Func<TTarget, TProperty>> expression)
         {
             var builder = new MapBuilder<TProperty>(this, expression);
 
             return builder;
-        }        
+        }
+
+        public void ResetFields(bool value)
+        {
+            resetFields = value;
+        }
+
+        private void Build(DataCandidate candidate)
+        {
+            var obj = Factory.Invoke(candidate);
+            if (obj == null)
+                return;
+
+            var allCandidates = subscriber.Poll(candidate.TargetId);
+            var fieldCandidates = allCandidates.GroupBy(x => x.TargetField);
+            var type = obj.GetType();
+            foreach (var field in fieldCandidates)
+            {
+                var candidates = field
+                    .OrderByDescending(x => x.Freshness)
+                    .OrderByDescending(x => x.Priority)
+                    .Where(x => subscriber.Filters.All(filter => filter.Accept(x))).ToArray();
+
+                List<IReducer> reducers;
+                if (valueReducers.TryGetValue(field.Key, out reducers))
+                {
+                    foreach (var reducer in reducers)
+                    {
+                        candidates = reducer.Reduce(candidates);
+                    }
+                }
+
+                var selectedCandidate = candidates.FirstOrDefault();
+
+                var property = type.GetProperty(field.Key);
+                if (property == null)
+                    throw new InvalidOperationException("Property '" + field.Key + "' does not exist in type '" + type.Name + "'");
+
+                if (selectedCandidate == null)
+                {
+                    if (!resetFields)
+                        continue;
+                    else
+                        selectedCandidate = new DataCandidate { Value = TypeHelper.Default(property.PropertyType) };
+                }
+
+                property.SetValue(obj, selectedCandidate.Value, null);
+            }
+
+            if (OnConstructed != null)
+                OnConstructed.Invoke(this, new DataEventArgs(obj));
+        }
     }
 }

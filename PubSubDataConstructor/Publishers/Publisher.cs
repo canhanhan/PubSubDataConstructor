@@ -13,18 +13,42 @@ namespace PubSubDataConstructor.Publishers
 
         private readonly ConcurrentQueue<DataCandidate> queue;
 
+        public bool IsSuspended { get; private set; }
+
         public Publisher(IChannel channel) : base(channel)
         {
             this.queue = new ConcurrentQueue<DataCandidate>();
         }
 
+        public void Resume()
+        {
+            this.CheckConnection();
+
+            if (!IsSuspended)
+                return;
+
+            IsSuspended = false;
+
+            DataCandidate candidate;
+            while (queue.TryDequeue(out candidate))
+            {
+                channel.Publish(candidate);
+            }
+        }
+
+        public virtual void Suspend()
+        {
+            if (IsSuspended)
+                return;
+
+            IsSuspended = true;
+        }
+
+
         public void Publish(DataCandidate candidate)
         {
             if (candidate == null)
                 throw new ArgumentNullException("candidate");
-
-            if (filters.Any(x => !x.Accept(candidate)))
-                return;
 
             if (IsSuspended)
             {
@@ -57,16 +81,7 @@ namespace PubSubDataConstructor.Publishers
             }
         }
 
-        public override void Resume()
-        {
-            base.Resume();
 
-            DataCandidate candidate;
-            while(queue.TryDequeue(out candidate))
-            {
-                channel.Publish(candidate);
-            }
-        }
 
         protected void Queue(DataCandidate candidate)
         {

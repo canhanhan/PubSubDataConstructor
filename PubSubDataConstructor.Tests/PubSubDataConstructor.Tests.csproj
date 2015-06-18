@@ -62,6 +62,7 @@
     <Compile Include="Channels\InMemoryChannelTests.cs" />
     <Compile Include="ClientTests.cs" />
     <Compile Include="Fakes\FakeChannel.cs" />
+    <Compile Include="Fakes\FakeClient.cs" />
     <Compile Include="Fakes\FakeFilter.cs" />
     <Compile Include="Filters\BlankFilterTests.cs" />
     <Compile Include="Filters\MaxLengthFilterTests.cs" />

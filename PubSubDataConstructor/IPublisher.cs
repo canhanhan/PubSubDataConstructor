@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PubSubDataConstructor
 {
-    public interface IPublisher : IChannelClient
+    public interface IPublisher
     {
         event EventHandler<DataCandidateEventArgs> OnPublished;
         event EventHandler<DataCandidateEventArgs> OnQueued;

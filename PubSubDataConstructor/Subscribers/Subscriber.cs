@@ -6,28 +6,57 @@ using System.Text;
 namespace PubSubDataConstructor.Subscribers
 {
     public class Subscriber : Client, ISubscriber
-    {        
+    {
         public event EventHandler<DataCandidateEventArgs> OnReceived;
-        public event EventHandler<DataEventArgs> OnConstructed;
 
         private readonly KeyValueStore<Action<DataCandidate>> subscriptions;
+        protected readonly List<IFilter> filters;
+
+        public IEnumerable<IFilter> Filters { get { return filters; } }
 
         public Subscriber(IChannel channel) : base(channel) 
         {
+            this.filters = new List<IFilter>();
             this.subscriptions = new KeyValueStore<Action<DataCandidate>>();
         }
 
-        public virtual void Subscribe(string topic, IStrategy strategy)
+        public void AddFilter(IFilter filter)
+        {
+            if (filter == null)
+                throw new ArgumentNullException("filter");
+
+            filters.Add(filter);
+        }
+
+        public void RemoveFilter(IFilter filter)
+        {
+            if (filter == null)
+                throw new ArgumentNullException("filter");
+
+            filters.Remove(filter);
+        }
+
+        public IEnumerable<DataCandidate> Poll(string topic)
         {
             if (topic == null)
                 throw new ArgumentNullException("topic");
 
-            if (strategy == null)
-                throw new ArgumentNullException("strategy");
+            this.CheckConnection();
+
+            return channel.Poll(topic);
+        }
+
+        public virtual void Subscribe(string topic, Action<DataCandidate> callback)
+        {
+            if (topic == null)
+                throw new ArgumentNullException("topic");
+
+            if (callback == null)
+                throw new ArgumentNullException("callback");
 
             this.CheckConnection();
 
-            Action<DataCandidate> callback = x => channel_OnDataAvailable(x, topic, strategy);       
+            Action<DataCandidate> wrappedCallback = candidate => channel_OnDataAvailable(candidate, callback);       
             subscriptions.Add(topic, callback);
             channel.Subscribe(topic, callback);
         }
@@ -44,15 +73,12 @@ namespace PubSubDataConstructor.Subscribers
                 channel.Unsubscribe(topic, callback);
         }
       
-        private void channel_OnDataAvailable(DataCandidate candidate, string topic, IStrategy strategy)
+        private void channel_OnDataAvailable(DataCandidate candidate, Action<DataCandidate> callback)
         {
             if (OnReceived != null)
                 OnReceived.Invoke(this, new DataCandidateEventArgs(candidate));
 
-            var result = strategy.Run(channel, filters.ToArray(), candidate);
-
-            if (result != null && OnConstructed != null)
-                OnConstructed.Invoke(this, new DataEventArgs(result));
+            callback.Invoke(candidate);
         }
     }
 }
