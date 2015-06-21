@@ -13,9 +13,8 @@ namespace PubSubDataConstructor
         void Connect();
         void Disconnect();
 
-        IEnumerable<DataCandidate> Poll(string topic);
-        void Subscribe(string topic, Action<DataCandidate> callback);
-        void Unsubscribe(string topic, Action<DataCandidate> callback);
+        void Subscribe(Topic topic, Action<DataCandidate> callback);
+        void Unsubscribe(Topic topic, Action<DataCandidate> callback);
         void Publish(DataCandidate dataCandidate);
     }
 }

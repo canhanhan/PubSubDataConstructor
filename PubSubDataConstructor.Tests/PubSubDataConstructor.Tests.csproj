@@ -57,19 +57,21 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="AcceptanceTests.cs" />
-    <Compile Include="BuilderAcceptanceTests.cs" />
+    <Compile Include="IntegrationTests\SubscriberIntegrationTests.cs" />
     <Compile Include="Channels\InMemoryChannelTests.cs" />
     <Compile Include="ClientTests.cs" />
     <Compile Include="Fakes\FakeChannel.cs" />
     <Compile Include="Fakes\FakeClient.cs" />
     <Compile Include="Fakes\FakeFilter.cs" />
+    <Compile Include="Fakes\FakeRepository.cs" />
     <Compile Include="Filters\BlankFilterTests.cs" />
     <Compile Include="Filters\MaxLengthFilterTests.cs" />
     <Compile Include="Filters\MinLengthFilterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Publishers\PublisherTests.cs" />
     <Compile Include="Subscribers\SubscriberTests.cs" />
+    <Compile Include="AcceptanceTests\ComputerBuildAcceptanceTests.cs" />
+    <Compile Include="Utils\TopicHelperTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PubSubDataConstructor\PubSubDataConstructor.csproj">

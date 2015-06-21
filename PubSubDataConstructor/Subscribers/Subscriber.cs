@@ -1,23 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Collections.Generic;
+using PubSubDataConstructor.Subscribers.Repositories;
 
-namespace PubSubDataConstructor.Subscribers
+namespace PubSubDataConstructor
 {
-    public class Subscriber : Client, ISubscriber
-    {
-        public event EventHandler<DataCandidateEventArgs> OnReceived;
-
-        private readonly KeyValueStore<Action<DataCandidate>> subscriptions;
+    public class Subscriber : Publisher, ISubscriber
+    {       
+        private readonly KeyValueStore<Topic, Action<DataCandidate>> subscriptions;
         protected readonly List<IFilter> filters;
+        protected readonly IRepository repository;
 
         public IEnumerable<IFilter> Filters { get { return filters; } }
 
-        public Subscriber(IChannel channel) : base(channel) 
+        public Subscriber(IChannel channel, IRepository repository) : base(channel) 
         {
-            this.filters = new List<IFilter>();
-            this.subscriptions = new KeyValueStore<Action<DataCandidate>>();
+            if (repository == null)
+                throw new ArgumentNullException("repository");
+
+            this.repository = repository;
+            this.filters = new List<IFilter>();            
+            this.subscriptions = new KeyValueStore<Topic, Action<DataCandidate>>();
         }
 
         public void AddFilter(IFilter filter)
@@ -36,17 +39,15 @@ namespace PubSubDataConstructor.Subscribers
             filters.Remove(filter);
         }
 
-        public IEnumerable<DataCandidate> Poll(string topic)
+        public virtual IEnumerable<DataCandidate> Poll(Topic topic)
         {
             if (topic == null)
                 throw new ArgumentNullException("topic");
 
-            this.CheckConnection();
-
-            return channel.Poll(topic);
+            return repository.List(topic);
         }
 
-        public virtual void Subscribe(string topic, Action<DataCandidate> callback)
+        public virtual void Subscribe(Topic topic, Action<DataCandidate> callback)
         {
             if (topic == null)
                 throw new ArgumentNullException("topic");
@@ -56,12 +57,12 @@ namespace PubSubDataConstructor.Subscribers
 
             this.CheckConnection();
 
-            Action<DataCandidate> wrappedCallback = candidate => channel_OnDataAvailable(candidate, callback);       
-            subscriptions.Add(topic, callback);
-            channel.Subscribe(topic, callback);
+            Action<DataCandidate> wrappedCallback = candidate => channel_OnDataAvailable(candidate, callback);
+            subscriptions.Add(topic, wrappedCallback);
+            channel.Subscribe(topic, wrappedCallback);
         }
 
-        public virtual void Unsubscribe(string topic)
+        public virtual void Unsubscribe(Topic topic)
         {
             if (topic == null)
                 throw new ArgumentNullException("topic");
@@ -71,13 +72,16 @@ namespace PubSubDataConstructor.Subscribers
             var callbacks = subscriptions[topic];
             foreach (var callback in callbacks)
                 channel.Unsubscribe(topic, callback);
+
+            subscriptions.Remove(topic);
         }
       
         private void channel_OnDataAvailable(DataCandidate candidate, Action<DataCandidate> callback)
         {
-            if (OnReceived != null)
-                OnReceived.Invoke(this, new DataCandidateEventArgs(candidate));
+            if (filters.Any(x => !x.Accept(candidate)))
+                return;
 
+            repository.Add(candidate);            
             callback.Invoke(candidate);
         }
     }

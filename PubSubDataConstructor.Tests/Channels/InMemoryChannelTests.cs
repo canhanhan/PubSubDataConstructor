@@ -10,12 +10,6 @@ namespace PubSubDataConstructor.Tests.Channels
     [TestClass]
     public class InMemoryChannelTests 
     {
-        [TestInitialize]
-        public void Reset()
-        {
-            InMemoryChannel.Reset();
-        }
-
         [TestMethod]
         public void InMemoryChannel_Connect_TriggersOnConnect()
         {
@@ -44,14 +38,14 @@ namespace PubSubDataConstructor.Tests.Channels
         [TestMethod]
         public void InMemoryChannel_Publish_TriggersOnDataAvailable()
         {
-            var topic = "TestTopic";
+            var targetType = "TestType";
+            var targetId = "TestTopic";
             var isTriggered = false;
-            var candidate = new DataCandidate { TargetId = topic };
+            var candidate = new DataCandidate { TargetType = targetType, TargetId = targetId };
             DataCandidate returnedCandidate = null;
             var channel = new InMemoryChannel();
             channel.Connect();
-
-            channel.Subscribe(topic, x => { isTriggered = true; returnedCandidate = x; });
+            channel.Subscribe(new Topic { Type = targetType }, x => { isTriggered = true; returnedCandidate = x; });
             channel.Publish(candidate);           
 
             Assert.IsTrue(isTriggered);
@@ -61,50 +55,20 @@ namespace PubSubDataConstructor.Tests.Channels
         [TestMethod]
         public void InMemoryChannel_Publish_NotSubscribed_DoesNotTriggerOnDataAvailable()
         {
-            var topic = "TestTopic";
+            var targetType = "TestType";
+            var targetId = "TestTopic";
             var isTriggered = false;
-            var candidate = new DataCandidate { TargetId = topic };
+            var candidate = new DataCandidate { TargetType = targetType, TargetId = targetId };
             DataCandidate returnedCandidate = null;
             var publisher = new InMemoryChannel();
             var subscriber = new InMemoryChannel();
             publisher.Connect();
             subscriber.Connect();
 
-            subscriber.Subscribe("DifferentTopic", x => { isTriggered = true; returnedCandidate = x; });
+            subscriber.Subscribe(new Topic { Type = "DifferentTopic" } , x => { isTriggered = true; returnedCandidate = x; });
             publisher.Publish(candidate);
 
             Assert.IsFalse(isTriggered);
-        }
-
-        [TestMethod]
-        public void InMemoryChannel_Poll_ReturnsTopic()
-        {
-            var topic = "TestTopic";
-            var candidate = new DataCandidate { TargetId = topic };
-            var channel = new InMemoryChannel();
-            channel.Connect();
-
-            channel.Publish(candidate);
-            var result = channel.Poll(topic);
-
-            Assert.AreSame(candidate, result.Single());
-        }
-
-        [TestMethod]
-        public void InMemoryChannel_Poll_ReturnsMultipleTopicContents()
-        {
-            var topic = "TestTopic";
-            var candidate1 = new DataCandidate { TargetId = topic };
-            var candidate2 = new DataCandidate { TargetId = topic };
-            var channel = new InMemoryChannel();
-            channel.Connect();
-
-            channel.Publish(candidate1);
-            channel.Publish(candidate2);
-            var result = channel.Poll(topic);
-
-            Assert.AreSame(candidate1, result.First());
-            Assert.AreSame(candidate2, result.Skip(1).Single());
         }
     }
 }

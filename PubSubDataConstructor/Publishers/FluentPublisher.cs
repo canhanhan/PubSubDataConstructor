@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 
 namespace PubSubDataConstructor.Publishers
 {
-    class FluentPublisher<TData, TTarget>
+    public class FluentPublisher<TData, TTarget>
     {
         public class MapBuilder<TDataProperty, TTargetProperty>
         {
@@ -29,6 +29,16 @@ namespace PubSubDataConstructor.Publishers
                 this.publisher = publisher;
                 this.sourceExpr = dataExpr;
                 this.targetExpr = targetExpr;
+            }
+
+            public MapBuilder<TDataProperty, TTargetProperty> HighPriority()
+            {
+                return Priority(255);
+            }
+
+            public MapBuilder<TDataProperty, TTargetProperty> LowPriority()
+            {
+                return Priority(10);
             }
 
             public MapBuilder<TDataProperty, TTargetProperty> Priority(byte value)
@@ -56,7 +66,7 @@ namespace PubSubDataConstructor.Publishers
                 return this;
             }
 
-            public Func<TData, DataCandidate> Compile()
+            internal Func<TData, DataCandidate> Compile()
             {
                 var sourceField = ExpressionHelper.GetPropertyName(sourceExpr.Body);
                 var targetField = ExpressionHelper.GetPropertyName(targetExpr.Body);
@@ -65,6 +75,7 @@ namespace PubSubDataConstructor.Publishers
                 {
                     SourceField = sourceField,
                     SourceId = publisher.sourceIdExpression.Invoke(x),
+                    TargetType = typeof(TTarget).Name,
                     TargetId = publisher.targetIdExpression.Invoke(x),
                     TargetField = targetField,
                     Priority = priorityExpr.Invoke(x),
@@ -75,7 +86,7 @@ namespace PubSubDataConstructor.Publishers
 
         }
 
-        private readonly IPublisher publisher;
+        private readonly List<Func<TData, DataCandidate>> mappings;
         private Func<TData, string> targetIdExpression;
         private Func<TData, string> sourceIdExpression;
 
@@ -94,15 +105,12 @@ namespace PubSubDataConstructor.Publishers
             if (expression == null)
                 throw new ArgumentNullException("expression");
 
-            Target(x => typeof(TTarget).Name + "." + expression.Invoke(x));
+            Target(expression);
             Source(expression);
         }
 
-        private readonly List<Func<TData, DataCandidate>> mappings;
-
-        public FluentPublisher(IChannel channel)
+        public FluentPublisher()
         {
-            this.publisher = new Publisher(channel);
             this.mappings = new List<Func<TData, DataCandidate>>();
         }
 
@@ -113,10 +121,9 @@ namespace PubSubDataConstructor.Publishers
             return builder;
         }
 
-        public void Publish(TData data)
+        public void Publish(IPublisher publisher, TData data)
         {
             publisher.Publish(mappings.Select(x => x.Invoke(data)));
         }
     }
-
 }

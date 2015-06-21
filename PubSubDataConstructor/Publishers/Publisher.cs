@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace PubSubDataConstructor.Publishers
+namespace PubSubDataConstructor
 {
     public class Publisher : Client, IPublisher
     {
@@ -44,7 +44,6 @@ namespace PubSubDataConstructor.Publishers
             IsSuspended = true;
         }
 
-
         public void Publish(DataCandidate candidate)
         {
             if (candidate == null)
@@ -81,8 +80,6 @@ namespace PubSubDataConstructor.Publishers
             }
         }
 
-
-
         protected void Queue(DataCandidate candidate)
         {
             if (candidate == null)
@@ -102,6 +99,7 @@ namespace PubSubDataConstructor.Publishers
                 channel.Connect();
 
             channel.Publish(candidate);
+
             if (OnPublished != null)
                 OnPublished.Invoke(this, new DataCandidateEventArgs(candidate));
         }

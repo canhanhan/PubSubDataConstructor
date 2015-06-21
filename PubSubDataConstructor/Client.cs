@@ -6,9 +6,7 @@ namespace PubSubDataConstructor
 {
     public class Client
     {
-        protected readonly IChannel channel;
-        
-        
+        protected readonly IChannel channel;              
 
         public Client(IChannel channel)
         {

@@ -1,25 +1,44 @@
-﻿using System.Collections.Generic;
+﻿using PubSubDataConstructor.Utils;
+using System;
 using System.Linq;
 
 namespace PubSubDataConstructor.Channels
 {
-    public sealed class InMemoryChannel : Channel
-    {        
-        private static readonly List<DataCandidate> repository = new List<DataCandidate>();
-        
-        protected override IEnumerable<DataCandidate> PollExecute(string topic)
+    public class InMemoryChannel : Channel
+    {
+        private readonly KeyValueStore<Topic, Action<DataCandidate>> subscriptions;
+
+        public InMemoryChannel()
         {
-            return repository.Where(x => IsMatch(x.TargetId, topic));
+            subscriptions = new KeyValueStore<Topic, Action<DataCandidate>>();
+        }
+
+        public override void Subscribe(Topic topic, Action<DataCandidate> callback)
+        {
+            subscriptions.Add(topic, callback);
+        }
+
+        public override void Unsubscribe(Topic topic, Action<DataCandidate> callback)
+        {
+            subscriptions.Remove(topic, callback);
+        }
+
+        protected override void DisconnectExecute()
+        {
+            foreach (var subscription in subscriptions.Values)
+            {
+                subscription.Clear();
+            }
+
+            subscriptions.Clear();
         }
 
         protected override void PublishExecute(DataCandidate candidate)
         {
-            repository.Add(candidate);
-        }
-
-        public static new void Reset()
-        {
-            repository.Clear();
+            foreach (var callback in subscriptions.Where(x => TopicHelper.IsMatch(x.Key, candidate.ToTopic())).SelectMany(x => x.Value))
+            {
+                callback.Invoke(candidate);
+            }
         }
     }
 }

@@ -3,15 +3,15 @@ using System.Collections.Generic;
 
 namespace PubSubDataConstructor
 {
-    public interface ISubscriber
+    public interface ISubscriber : IPublisher
     {
         IEnumerable<IFilter> Filters { get; }
 
         void AddFilter(IFilter filter);
         void RemoveFilter(IFilter filter);
 
-        IEnumerable<DataCandidate> Poll(string topic);
-        void Subscribe(string topic, Action<DataCandidate> callback);
-        void Unsubscribe(string topic);
+        IEnumerable<DataCandidate> Poll(Topic topic);
+        void Subscribe(Topic topic, Action<DataCandidate> callback);
+        void Unsubscribe(Topic topic);
     }
 }

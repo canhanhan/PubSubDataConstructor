@@ -1,6 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using PubSubDataConstructor.Subscribers;
+using PubSubDataConstructor.Subscribers.Repositories;
 using PubSubDataConstructor.Tests.Fakes;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PubSubDataConstructor.Tests.Subscribers
@@ -8,11 +12,21 @@ namespace PubSubDataConstructor.Tests.Subscribers
     [TestClass]
     public class SubscriberTests
     {
+        private FakeChannel channel;
+        private FakeRepository repository;
+        private Subscriber subscriber;
+
+        [TestInitialize]
+        public void Setup()
+        {
+            channel = new FakeChannel();
+            repository = new FakeRepository();
+            subscriber = new Subscriber(channel, repository);
+        }
+
         [TestMethod]
         public void Subscriber_AddFilter()
         {
-            var subscriber = new Subscriber(new FakeChannel());
-
             var filter = new FakeFilter();
             subscriber.AddFilter(filter);
 
@@ -22,7 +36,6 @@ namespace PubSubDataConstructor.Tests.Subscribers
         [TestMethod]
         public void Subscriber_AddFilter_MultipleFilters()
         {
-            var subscriber = new Subscriber(new FakeChannel());
             var filter1 = new FakeFilter();
             var filter2 = new FakeFilter();
 
@@ -36,7 +49,6 @@ namespace PubSubDataConstructor.Tests.Subscribers
         [TestMethod]
         public void Subscriber_RemoveFilter_SingleFilter()
         {
-            var subscriber = new Subscriber(new FakeChannel());
             var filter = new FakeFilter();
 
             subscriber.AddFilter(filter);
@@ -48,7 +60,6 @@ namespace PubSubDataConstructor.Tests.Subscribers
         [TestMethod]
         public void Subscriber_RemoveFilter_MultipleFilters()
         {
-            var subscriber = new Subscriber(new FakeChannel());
             var filter1 = new FakeFilter();
             var filter2 = new FakeFilter();
 
@@ -57,6 +68,52 @@ namespace PubSubDataConstructor.Tests.Subscribers
             subscriber.RemoveFilter(filter1);
 
             Assert.AreSame(filter2, subscriber.Filters.Single());
+        }
+
+        [TestMethod]
+        public void Subscriber_ChannelPublish_TriggersCallback()
+        {
+            var wasCalled = false;
+            var candidate = new DataCandidate();
+            subscriber.Subscribe(candidate.ToTopic(), x => wasCalled = true);
+
+            channel.FakePublish(candidate);
+
+            Assert.IsTrue(wasCalled);
+        }
+
+        [TestMethod]
+        public void Subscriber_ChannelPublish_Filters()
+        {
+            var wasCalled = false;
+            var filter = new FakeFilter { ExpectedResult = false };
+            var candidate = new DataCandidate();
+            subscriber.AddFilter(filter);
+            subscriber.Subscribe(candidate.ToTopic(), x => wasCalled = true);
+
+            channel.FakePublish(candidate);
+
+            Assert.IsFalse(wasCalled);
+        }
+
+        [TestMethod]
+        public void Subscriber_Unsubscribe_RemovesCallback()
+        {
+            Action<DataCandidate> callback1 = null;
+
+            var channel = new Mock<IChannel>();
+            channel.Setup(x => x.Subscribe(It.IsAny<Topic>(), It.IsAny<Action<DataCandidate>>()))
+                .Callback<Topic, Action<DataCandidate>>((_, x) => callback1 = x);
+
+            channel.Setup(x => x.Unsubscribe(It.IsAny<Topic>(), It.IsAny<Action<DataCandidate>>()))
+                .Callback<Topic, Action<DataCandidate>>((_, x) => Assert.AreSame(callback1, x));
+
+            var candidate = new DataCandidate();
+            var subscriber = new Subscriber(channel.Object, repository);
+            subscriber.Subscribe(candidate.ToTopic(), x => { });
+            subscriber.Unsubscribe(candidate.ToTopic());
+
+            Assert.IsNotNull(callback1);
         }
     }
 }
