@@ -1,22 +1,28 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace PubSubDataConstructor
 {
-    public class Publisher : Client, IPublisher
+    public class Publisher : IPublisher
     {
         public event EventHandler<DataCandidateEventArgs> OnPublished;
         public event EventHandler<DataCandidateEventArgs> OnQueued;
 
         private readonly ConcurrentQueue<DataCandidate> queue;
+        protected readonly IChannel channel;
 
         public bool IsSuspended { get; private set; }
 
-        public Publisher(IChannel channel) : base(channel)
+        public Publisher(IChannel channel)
         {
+            if (channel == null)
+                throw new ArgumentNullException("channel");
+
+            this.channel = channel;
+            this.channel.OnConnect += channel_OnConnect;
+            this.channel.OnDisconnect += channel_OnDisconnect;
+
             this.queue = new ConcurrentQueue<DataCandidate>();
         }
 
@@ -80,6 +86,16 @@ namespace PubSubDataConstructor
             }
         }
 
+        protected void CheckConnection()
+        {
+            if (!channel.IsConnected)
+                channel.Connect();
+        }
+
+        protected virtual void OnChannelConnect() { }
+
+        protected virtual void OnChannelDisconnect() { }
+
         protected void Queue(DataCandidate candidate)
         {
             if (candidate == null)
@@ -102,6 +118,16 @@ namespace PubSubDataConstructor
 
             if (OnPublished != null)
                 OnPublished.Invoke(this, new DataCandidateEventArgs(candidate));
+        }
+
+        private void channel_OnConnect(object sender, EventArgs e)
+        {
+            this.OnChannelConnect();
+        }
+
+        private void channel_OnDisconnect(object sender, EventArgs e)
+        {
+            this.OnChannelDisconnect();
         }
     }
 }

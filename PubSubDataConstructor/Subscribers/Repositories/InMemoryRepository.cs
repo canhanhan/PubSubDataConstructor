@@ -14,6 +14,11 @@ namespace PubSubDataConstructor.Subscribers.Repositories
             repository = new KeyValueStore<Topic, DataCandidate>();
         }
 
+        public IEnumerable<DataCandidate> List()
+        {
+            return repository.SelectMany(x => x.Value);
+        }
+
         public IEnumerable<DataCandidate> List(Topic topic)
         {
             if (topic == null)
@@ -46,6 +51,11 @@ namespace PubSubDataConstructor.Subscribers.Repositories
 
             foreach (var obsolateCandidate in obsolateCandidates)
                 candidates.Remove(obsolateCandidate);
+        }
+
+        public void Clear()
+        {
+            repository.Clear();
         }
     }
 }

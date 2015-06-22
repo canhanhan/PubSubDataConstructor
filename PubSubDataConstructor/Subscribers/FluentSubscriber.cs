@@ -1,25 +1,19 @@
-﻿using PubSubDataConstructor.Filters;
-using PubSubDataConstructor.Reducers;
-using PubSubDataConstructor.Subscribers.Repositories;
-using PubSubDataConstructor.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace PubSubDataConstructor.Subscribers
 {
-    public class FluentSubscriber<TTarget> : SubscriberLike<TTarget>
+    public class FluentSubscriber<TTarget> : SubscriberLike<TTarget>, IBuilder
     {
         public event EventHandler<DataEventArgs> OnConstructed;
 
+        private readonly IFactory factory;
         private bool resetFields;
 
-        public Func<DataCandidate, TTarget> Factory { get; set; }
-
-        public FluentSubscriber(ISubscriber subscriber) : base(subscriber)
+        public FluentSubscriber(ISubscriber subscriber, IFactory factory) : base(subscriber)
         {
-            this.Factory = x => Activator.CreateInstance<TTarget>();
+            this.factory = factory ?? new DefaultFactory();
         }
 
         public void ResetFields(bool value)
@@ -29,7 +23,7 @@ namespace PubSubDataConstructor.Subscribers
 
         protected override void DataReceived(DataCandidate candidate)
         {
-            var obj = Factory.Invoke(candidate);
+            var obj = factory.Create(typeof(TTarget), candidate);
             if (obj == null)
                 return;
 
@@ -72,6 +66,8 @@ namespace PubSubDataConstructor.Subscribers
 
                 property.SetValue(obj, selectedCandidate.Value, null);
             }
+
+            factory.Save(typeof(TTarget), obj);
 
             if (OnConstructed != null)
                 OnConstructed.Invoke(this, new DataEventArgs(obj));

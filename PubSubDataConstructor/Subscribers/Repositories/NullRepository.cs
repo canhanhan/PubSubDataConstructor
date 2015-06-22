@@ -6,9 +6,16 @@ namespace PubSubDataConstructor.Subscribers.Repositories
     {
         public void Add(DataCandidate candidate) { }
 
-        public IEnumerable<DataCandidate> List(Topic topic)
+        public IEnumerable<DataCandidate> List()
         {
             return new DataCandidate[0];
         }
+
+        public IEnumerable<DataCandidate> List(Topic topic)
+        {
+            return List();
+        }
+
+        public void Clear() {}
     }
 }

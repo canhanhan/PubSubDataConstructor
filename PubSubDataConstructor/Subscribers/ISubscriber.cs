@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PubSubDataConstructor.Subscribers.Repositories;
+using System;
 using System.Collections.Generic;
 
 namespace PubSubDataConstructor
@@ -6,6 +7,7 @@ namespace PubSubDataConstructor
     public interface ISubscriber : IPublisher
     {
         IEnumerable<IFilter> Filters { get; }
+        IRepository Repository { get; }
 
         void AddFilter(IFilter filter);
         void RemoveFilter(IFilter filter);

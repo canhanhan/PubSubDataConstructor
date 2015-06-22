@@ -121,6 +121,11 @@ namespace PubSubDataConstructor.Publishers
             return builder;
         }
 
+        public void Publish(IPublisher publisher, object obj)
+        {
+            Publish(publisher, (TData)obj);
+        }
+
         public void Publish(IPublisher publisher, TData data)
         {
             publisher.Publish(mappings.Select(x => x.Invoke(data)));

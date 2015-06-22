@@ -41,11 +41,13 @@
   <ItemGroup>
     <Compile Include="Channels\Channel.cs" />
     <Compile Include="Channels\InMemoryChannel.cs" />
-    <Compile Include="Client.cs" />
     <Compile Include="DataCandidate.cs" />
     <Compile Include="DataCandidateEventArgs.cs" />
+    <Compile Include="Subscribers\DefaultFactory.cs" />
     <Compile Include="Subscribers\Filters\CustomFilter.cs" />
     <Compile Include="Publishers\FluentPublisher.cs" />
+    <Compile Include="Subscribers\IBuilder.cs" />
+    <Compile Include="Subscribers\IFactory.cs" />
     <Compile Include="Subscribers\Repositories\InMemoryRepository.cs" />
     <Compile Include="Subscribers\Repositories\IRepository.cs" />
     <Compile Include="Subscribers\Reducers\JoinReducer.cs" />

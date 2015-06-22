@@ -9,16 +9,16 @@ namespace PubSubDataConstructor
     {       
         private readonly KeyValueStore<Topic, Action<DataCandidate>> subscriptions;
         protected readonly List<IFilter> filters;
-        protected readonly IRepository repository;
 
         public IEnumerable<IFilter> Filters { get { return filters; } }
+        public IRepository Repository { get; private set; }
 
         public Subscriber(IChannel channel, IRepository repository) : base(channel) 
         {
             if (repository == null)
                 throw new ArgumentNullException("repository");
 
-            this.repository = repository;
+            this.Repository = repository;
             this.filters = new List<IFilter>();            
             this.subscriptions = new KeyValueStore<Topic, Action<DataCandidate>>();
         }
@@ -44,7 +44,7 @@ namespace PubSubDataConstructor
             if (topic == null)
                 throw new ArgumentNullException("topic");
 
-            return repository.List(topic);
+            return Repository.List(topic);
         }
 
         public virtual void Subscribe(Topic topic, Action<DataCandidate> callback)
@@ -81,7 +81,7 @@ namespace PubSubDataConstructor
             if (filters.Any(x => !x.Accept(candidate)))
                 return;
 
-            repository.Add(candidate);            
+            Repository.Add(candidate);            
             callback.Invoke(candidate);
         }
     }
