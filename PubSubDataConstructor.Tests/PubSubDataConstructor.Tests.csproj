@@ -60,6 +60,8 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="Fakes\FakeBuilder.cs" />
+    <Compile Include="Fakes\FakeEntity.cs" />
     <Compile Include="IntegrationTests\SubscriberIntegrationTests.cs" />
     <Compile Include="Channels\InMemoryChannelTests.cs" />
     <Compile Include="ClientTests.cs" />
@@ -71,8 +73,6 @@
     <Compile Include="Filters\MaxLengthFilterTests.cs" />
     <Compile Include="Filters\MinLengthFilterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Publishers\PublisherTests.cs" />
-    <Compile Include="Subscribers\SubscriberTests.cs" />
     <Compile Include="AcceptanceTests\ComputerBuildAcceptanceTests.cs" />
     <Compile Include="Utils\TopicHelperTests.cs" />
   </ItemGroup>

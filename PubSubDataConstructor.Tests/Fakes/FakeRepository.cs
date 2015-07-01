@@ -1,4 +1,4 @@
-﻿using PubSubDataConstructor.Subscribers.Repositories;
+﻿using PubSubDataConstructor.Repositories;
 using System.Collections.Generic;
 
 namespace PubSubDataConstructor.Tests.Fakes
@@ -13,6 +13,16 @@ namespace PubSubDataConstructor.Tests.Fakes
         }
 
         public IEnumerable<DataCandidate> List(Topic topic)
+        {
+            return repository;
+        }
+
+        public void Clear()
+        {
+            repository.Clear();
+        }
+
+        public IEnumerable<DataCandidate> List()
         {
             return repository;
         }

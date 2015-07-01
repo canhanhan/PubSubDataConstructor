@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace PubSubDataConstructor.Utils
 {
-    public class KeyValueStore<TKey, TValue> : Dictionary<TKey, List<TValue>>
+    internal class KeyValueStore<TKey, TValue> : Dictionary<TKey, List<TValue>>
     {        
         public void Add(TKey key, TValue value)
         {

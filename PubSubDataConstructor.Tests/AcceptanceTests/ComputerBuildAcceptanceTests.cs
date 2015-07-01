@@ -1,8 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PubSubDataConstructor.Channels;
-using PubSubDataConstructor.Publishers;
-using PubSubDataConstructor.Subscribers;
-using PubSubDataConstructor.Subscribers.Repositories;
+using PubSubDataConstructor.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,7 +52,6 @@ namespace PubSubDataConstructor.Tests
             public System1Publisher()
             {
                 Id(x => x.Id);
-
                 Map(x => x.SerialNumber, x => x.SerialNumber).HighPriority();
                 Map(x => x.DateCreated, x => x.FirstSeen);
                 Map(x => x.DateCreated, x => x.LastSeen);
@@ -76,9 +73,9 @@ namespace PubSubDataConstructor.Tests
             }
         }
 
-        class ComputerSubscriber : FluentSubscriber<Computer>
+        class ComputerBuilder : FluentBuilder<Computer>
         {
-            public ComputerSubscriber(ISubscriber subscriber) : base(subscriber)
+            public ComputerBuilder()
             {
                 ResetFields(true);
 
@@ -95,7 +92,7 @@ namespace PubSubDataConstructor.Tests
         interface IPlugin
         {
             IEnumerable<object> Collect();
-            void Publish(IPublisher publisher, object data);
+            void Publish(IClient publisher, object data);
         }
 
         abstract class Plugin : IPlugin
@@ -112,14 +109,14 @@ namespace PubSubDataConstructor.Tests
                 return repository;
             }
 
-            public abstract void Publish(IPublisher publisher, object data);
+            public abstract void Publish(IClient publisher, object data);
         }
 
         class System1Plugin : Plugin
         {
             private static readonly System1Publisher publishRecipe = new System1Publisher();
 
-            public override void Publish(IPublisher publisher, object data)
+            public override void Publish(IClient publisher, object data)
             {
                 publishRecipe.Publish(publisher, (System1)data);
             }
@@ -129,15 +126,15 @@ namespace PubSubDataConstructor.Tests
         {
             private static readonly System2Publisher publishRecipe = new System2Publisher();
 
-            public override void Publish(IPublisher publisher, object data)
+            public override void Publish(IClient publisher, object data)
             {
                 publishRecipe.Publish(publisher, (System2)data);
             }
         }
 
-        class TagSubscriber : FluentSubscriber<Computer>
+        class TagBuilder : FluentBuilder<Computer>
         {
-            public TagSubscriber(ISubscriber subscriber) : base(subscriber)
+            public TagBuilder()
             {
                 Listen(x => x.Model, x => PublishTag(x , x.Value));
                 Listen(x => x.LastSeen, x =>
@@ -149,7 +146,7 @@ namespace PubSubDataConstructor.Tests
 
             private void PublishTag(DataCandidate candidate, object value)
             {
-                subscriber.Publish(new DataCandidate
+                Client.Publish(new DataCandidate
                 {
                     TargetType = candidate.TargetType,
                     TargetId = candidate.TargetId,
@@ -165,46 +162,40 @@ namespace PubSubDataConstructor.Tests
         [TestMethod]
         public void ComputerBuild_AcceptanceTest()
         {
-            var database = new Dictionary<string, Computer>();
+            var context = new Dictionary<string, object>();
             var channel = new InMemoryChannel();
             var repository = new InMemoryRepository();
 
-            var publisher = new Publisher(channel);
-            var subscriber = new Subscriber(channel, repository);
-            var computerSubscriber = new ComputerSubscriber(subscriber);
-            computerSubscriber.Factory = x =>
-            {
-                Computer computer;
-                if (!database.TryGetValue(x.TargetId, out computer))
-                {
-                    computer = new Computer { Id = x.TargetId };
-                    database.Add(x.TargetId, computer);
-                }
-
-                return computer;
-            };
-            computerSubscriber.OnConstructed += (obj, args) =>
-            {
-                var data = (Computer)args.Data;
-                database[data.Id] = data;
-            };
-
-            var tagPlugin = new TagSubscriber(subscriber);
+            var client = new Client(repository);
+            var computerBuilder = new ComputerBuilder();                      
+            var tagPlugin = new TagBuilder();
             var system1Plugin = SetupPlugin1();
             var system2Plugin = SetupPlugin2();
+            var builders = new IBuilder[] { computerBuilder, tagPlugin };
             var plugins = new IPlugin[] { system1Plugin, system2Plugin };
-            
+
+            client.Attach(channel);
+            client.Suspend();
+            foreach(var builder in builders)
+                builder.Start(client, context);
+
             foreach(var plugin in plugins)
             {
                 var results = plugin.Collect();
                 foreach(var result in results)
                 {
                     //database.Save(result);
-                    plugin.Publish(publisher, result);
+                    plugin.Publish(client, result);
                 }
             }
+            client.Resume();
 
-            var computer1 = database.Values.First();
+            foreach (var builder in builders)
+                builder.Stop();
+
+            client.Detach();
+
+            var computer1 = (Computer)context.Values.First();
             Assert.AreEqual("Computer1", computer1.Id);
             Assert.AreEqual(new DateTime(2015, 10, 10), computer1.FirstSeen);
             Assert.AreEqual(new DateTime(2015, 10, 12), computer1.LastSeen);

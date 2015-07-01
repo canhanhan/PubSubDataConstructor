@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace PubSubDataConstructor.Subscribers.Repositories
+namespace PubSubDataConstructor.Repositories
 {
     public class NullRepository : IRepository
     {

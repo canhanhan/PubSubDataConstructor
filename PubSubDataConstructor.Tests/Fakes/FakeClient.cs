@@ -5,7 +5,7 @@
         public bool OnChannelConnectTriggered { get; set; }
         public bool OnChannelDisconnectTriggered { get; set; }
 
-        public FakeClient(IChannel channel) : base(channel) { }
+        public FakeClient(IRepository repository) : base(repository) {}
 
         protected override void OnChannelConnect()
         {

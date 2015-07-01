@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace PubSubDataConstructor.Publishers
+namespace PubSubDataConstructor
 {
     public class FluentPublisher<TData, TTarget>
     {
@@ -91,6 +91,12 @@ namespace PubSubDataConstructor.Publishers
         private Func<TData, string> sourceIdExpression;
         private Func<TData, DateTime> freshnessExpression;
 
+        public FluentPublisher()
+        {
+            this.mappings = new List<Func<TData, DataCandidate>>();
+            this.sourceIdExpression = _ => GetType().Name;
+        }
+
         public void Freshness(Func<TData, DateTime> expression)
         {
             freshnessExpression = expression;
@@ -106,18 +112,17 @@ namespace PubSubDataConstructor.Publishers
             sourceIdExpression = expression;
         }
 
+        public void Source(string value)
+        {
+            sourceIdExpression = _ => value;
+        }
+
         public void Id(Func<TData, string> expression)
         {
             if (expression == null)
                 throw new ArgumentNullException("expression");
 
             Target(expression);
-            Source(expression);
-        }
-
-        public FluentPublisher()
-        {
-            this.mappings = new List<Func<TData, DataCandidate>>();
         }
 
         public MapBuilder<TDataProperty, TTargetProperty> Map<TDataProperty, TTargetProperty>(Expression<Func<TData, TDataProperty>> dataExpr, Expression<Func<TTarget, TTargetProperty>> assetExpr)
@@ -127,14 +132,14 @@ namespace PubSubDataConstructor.Publishers
             return builder;
         }
 
-        public void Publish(IPublisher publisher, object obj)
+        public void Publish(IClient client, object obj)
         {
-            Publish(publisher, (TData)obj);
+            Publish(client, (TData)obj);
         }
 
-        public void Publish(IPublisher publisher, TData data)
+        public void Publish(IClient client, TData data)
         {
-            publisher.Publish(mappings.Select(x => x.Invoke(data)));
+            client.Publish(mappings.Select(x => x.Invoke(data)));
         }
     }
 }
