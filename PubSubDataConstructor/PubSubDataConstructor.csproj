@@ -74,7 +74,7 @@
     <Compile Include="Publishers\IPublisher.cs" />
     <Compile Include="Subscribers\ISubscriber.cs" />
     <Compile Include="DataEventArgs.cs" />
-    <Compile Include="KeyValueStore.cs" />
+    <Compile Include="Utils\KeyValueStore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Publishers\Publisher.cs" />
     <Compile Include="Subscribers\Subscriber.cs" />

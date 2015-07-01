@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 using PubSubDataConstructor.Subscribers.Repositories;
+using PubSubDataConstructor.Utils;
 
 namespace PubSubDataConstructor
 {
