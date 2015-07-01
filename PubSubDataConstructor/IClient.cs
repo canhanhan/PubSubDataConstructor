@@ -11,9 +11,6 @@ namespace PubSubDataConstructor
 
         bool IsSuspended { get; }
 
-        void Attach(IChannel channel);
-        void Detach();
-
         IRepository Repository { get; }
         IEnumerable<DataCandidate> Poll(Topic topic);
 

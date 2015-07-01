@@ -17,43 +17,26 @@ namespace PubSubDataConstructor
         private readonly ConcurrentQueue<DataCandidate> publishQueue;
         private readonly KeyValueStore<Topic, Action<DataCandidate>> subscriptions;
 
-        protected IChannel channel;
+        protected readonly IChannel channel;
 
         public bool IsSuspended { get; private set; }
         public IRepository Repository { get; private set; }
         
-        public Client(IRepository repository)
-        {
-            if (repository == null)
-                throw new ArgumentNullException("repository");
-
-            this.Repository = repository;
-            this.publishQueue = new ConcurrentQueue<DataCandidate>();
-            this.subscriptions = new KeyValueStore<Topic, Action<DataCandidate>>();
-        }
-
-        public void Attach (IChannel channel)
+        public Client(IChannel channel, IRepository repository)
         {
             if (channel == null)
                 throw new ArgumentNullException("channel");
 
+            if (repository == null)
+                throw new ArgumentNullException("repository");
+
             this.channel = channel;
             this.channel.OnConnect += channel_OnConnect;
             this.channel.OnDisconnect += channel_OnDisconnect;
-        }
 
-        public void Detach()
-        {
-            if (channel == null)
-                throw new InvalidOperationException("No channel was attached.");
-
-            this.channel.OnConnect -= channel_OnConnect;
-            this.channel.OnDisconnect -= channel_OnDisconnect;
-
-            foreach(var topic in subscriptions.Keys.ToArray())
-                Unsubscribe(topic);
-
-            channel = null;
+            this.Repository = repository;
+            this.publishQueue = new ConcurrentQueue<DataCandidate>();
+            this.subscriptions = new KeyValueStore<Topic, Action<DataCandidate>>();
         }
 
         public void Resume()
@@ -155,8 +138,6 @@ namespace PubSubDataConstructor
 
         protected void CheckConnection()
         {
-            if (channel == null)
-                throw new InvalidOperationException("Channel is not attached. Please attach a channel before calling this method.");
             if (!channel.IsConnected)
                 channel.Connect();
         }

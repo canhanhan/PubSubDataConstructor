@@ -24,8 +24,7 @@ namespace PubSubDataConstructor.Tests.IntegrationTests
             repository = new InMemoryRepository();
             context = new Dictionary<string, object>();
 
-            client = new Client(repository);
-            client.Attach(channel);
+            client = new Client(channel, repository);
 
             builder = new FakeBuilder();
             builder.Start(client, context);

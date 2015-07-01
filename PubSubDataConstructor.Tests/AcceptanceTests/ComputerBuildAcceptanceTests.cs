@@ -166,7 +166,7 @@ namespace PubSubDataConstructor.Tests
             var channel = new InMemoryChannel();
             var repository = new InMemoryRepository();
 
-            var client = new Client(repository);
+            var client = new Client(channel, repository);
             var computerBuilder = new ComputerBuilder();                      
             var tagPlugin = new TagBuilder();
             var system1Plugin = SetupPlugin1();
@@ -174,7 +174,6 @@ namespace PubSubDataConstructor.Tests
             var builders = new IBuilder[] { computerBuilder, tagPlugin };
             var plugins = new IPlugin[] { system1Plugin, system2Plugin };
 
-            client.Attach(channel);
             client.Suspend();
             foreach(var builder in builders)
                 builder.Start(client, context);
@@ -192,8 +191,6 @@ namespace PubSubDataConstructor.Tests
 
             foreach (var builder in builders)
                 builder.Stop();
-
-            client.Detach();
 
             var computer1 = (Computer)context.Values.First();
             Assert.AreEqual("Computer1", computer1.Id);
