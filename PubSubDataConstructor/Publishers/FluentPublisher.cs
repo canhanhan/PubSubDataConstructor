@@ -12,7 +12,7 @@ namespace PubSubDataConstructor.Publishers
             private readonly Expression<Func<TData, TDataProperty>> sourceExpr;
             private readonly Expression<Func<TTarget, TTargetProperty>> targetExpr;
             private readonly FluentPublisher<TData, TTarget> publisher;
-            private Func<TData, DateTime> freshnessExpr = _ => DateTime.MinValue;
+            private Func<TData, DateTime> freshnessExpr;
             private Func<TData, byte> priorityExpr = _ => 10;
 
             public MapBuilder(FluentPublisher<TData, TTarget> publisher, Expression<Func<TData, TDataProperty>> dataExpr, Expression<Func<TTarget, TTargetProperty>> targetExpr)
@@ -79,7 +79,7 @@ namespace PubSubDataConstructor.Publishers
                     TargetId = publisher.targetIdExpression.Invoke(x),
                     TargetField = targetField,
                     Priority = priorityExpr.Invoke(x),
-                    Freshness = freshnessExpr.Invoke(x),
+                    Freshness = (freshnessExpr ?? publisher.freshnessExpression ?? (_ => DateTime.Now)).Invoke(x),
                     Value = sourceExpr.Compile().Invoke(x)
                 };
             }
@@ -89,6 +89,12 @@ namespace PubSubDataConstructor.Publishers
         private readonly List<Func<TData, DataCandidate>> mappings;
         private Func<TData, string> targetIdExpression;
         private Func<TData, string> sourceIdExpression;
+        private Func<TData, DateTime> freshnessExpression;
+
+        public void Freshness(Func<TData, DateTime> expression)
+        {
+            freshnessExpression = expression;
+        }
 
         public void Target(Func<TData, string> expression)
         {

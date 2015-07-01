@@ -4,6 +4,8 @@ namespace PubSubDataConstructor
 {
     public class DataCandidate
     {
+        public int Id { get { return GetHashCode(); } }
+
         public string SourceId { get; set; }
         public string SourceField { get; set; }
         public string TargetType { get; set; }
