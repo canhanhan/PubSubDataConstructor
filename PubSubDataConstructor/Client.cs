@@ -16,11 +16,11 @@ namespace PubSubDataConstructor
 
         private readonly ConcurrentQueue<DataCandidate> publishQueue;
         private readonly KeyValueStore<Topic, Action<DataCandidate>> subscriptions;
+        private readonly IRepository Repository;
 
         protected readonly IChannel channel;
 
         public bool IsSuspended { get; private set; }
-        public IRepository Repository { get; private set; }
         
         public Client(IChannel channel, IRepository repository)
         {
@@ -134,6 +134,22 @@ namespace PubSubDataConstructor
                 throw new ArgumentNullException("topic");
 
             return Repository.List(topic);
+        }
+
+        public virtual IEnumerable<DataCandidate> List()
+        {
+            return Repository.List();
+        }
+
+        public virtual void Load(IEnumerable<DataCandidate> candidates)
+        {
+            foreach (var candidate in candidates)
+                Repository.Add(candidate);
+        }
+
+        public virtual void Clear()
+        {
+            Repository.Clear();
         }
 
         protected void CheckConnection()
