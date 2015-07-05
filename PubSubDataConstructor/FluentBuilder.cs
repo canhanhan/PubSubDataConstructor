@@ -101,6 +101,7 @@ namespace PubSubDataConstructor
 
         private readonly List<IFilter> filters;
         private readonly List<Tuple<Topic, Action<DataCandidate>>> customTopics;
+        private readonly List<Tuple<string, object>> staticValues;
         private readonly KeyValueStore<string, IReducer> valueReducers;
 
         private bool resetFields;
@@ -115,6 +116,7 @@ namespace PubSubDataConstructor
             this.filters = new List<IFilter>();
             this.customTopics = new List<Tuple<Topic, Action<DataCandidate>>>();
             this.valueReducers = new KeyValueStore<string, IReducer>();
+            this.staticValues = new List<Tuple<string, object>>();
         }
 
         public void Start(IClient client, IDictionary<string, object> context)
@@ -184,6 +186,12 @@ namespace PubSubDataConstructor
             return new MapBuilder<TProperty>(this, expression);
         }
 
+        protected void Static<TProperty>(Expression<Func<TTarget, TProperty>> expression, TProperty value)
+        {
+            var fieldName = ExpressionHelper.GetPropertyName(expression.Body);
+            staticValues.Add(Tuple.Create(fieldName, (object)value));
+        }
+
         protected void Listen<TProperty>(Expression<Func<TTarget, TProperty>> expression, Action<DataCandidate> callback)
         {
             var fieldName = ExpressionHelper.GetPropertyName(expression.Body);
@@ -206,9 +214,12 @@ namespace PubSubDataConstructor
                 context.Add(candidate.TargetId, obj);
             }
 
+            var type = obj.GetType();
+            foreach (var staticValue in staticValues)
+                type.GetProperty(staticValue.Item1).SetValue(obj, staticValue.Item2);
+
             var allCandidates = client.Poll(candidate.ToTopic());
             var fieldCandidates = allCandidates.GroupBy(x => x.TargetField);
-            var type = obj.GetType();
             foreach (var field in fieldCandidates)
             {
                 IEnumerable<DataCandidate> candidates = field.Where(x => filters.All(filter => filter.Accept(x))).ToArray();
