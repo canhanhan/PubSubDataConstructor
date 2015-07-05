@@ -11,8 +11,8 @@ namespace PubSubDataConstructor
 
         bool IsSuspended { get; }
 
-        IRepository Repository { get; }
         IEnumerable<DataCandidate> Poll(Topic topic);
+        IEnumerable<DataCandidate> List();
 
         void Suspend();
         void Resume();
@@ -21,5 +21,8 @@ namespace PubSubDataConstructor
         void Unsubscribe(Topic topic);
         void Publish(DataCandidate candidate);
         void Publish(IEnumerable<DataCandidate> candidates);
+
+        void Load(IEnumerable<DataCandidate> candidates);
+        void Clear();
     }
 }
