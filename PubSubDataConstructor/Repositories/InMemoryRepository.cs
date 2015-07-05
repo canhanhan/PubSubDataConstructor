@@ -24,7 +24,7 @@ namespace PubSubDataConstructor.Repositories
             if (topic == null)
                 throw new ArgumentNullException("topic");
 
-            return repository.Where(x => TopicHelper.IsMatch(x.Key, topic)).SelectMany(x => x.Value);
+            return repository.Where(x => TopicHelper.IsMatch(topic, x.Key)).SelectMany(x => x.Value);
         }
 
         public void Add(DataCandidate candidate)
